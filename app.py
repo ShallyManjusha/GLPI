@@ -161,7 +161,7 @@ def fetch_ticket_details(session_token, ticket_id):
         return {"status": "error", "message": str(e)}
 
 # Function to raise a ticket in GLPI
-def raise_ticket(description, session_token, status, date, request_source, itil_category_id):
+def raise_ticket(description, session_token, status, date, request_source):
     global created_ticket_title  # Use the global variable
 
     headers = {
@@ -183,7 +183,7 @@ def raise_ticket(description, session_token, status, date, request_source, itil_
             "date": date,  # Changed to 'date'
             "requesttypes_id": request_source,
             # "_users_id_requester": requester_email,
-            "itilcategories_id": itil_category_id,
+            # "itilcategories_id": itil_category_id,
             "type": 2
         }
     }
@@ -254,12 +254,12 @@ def api_raise_ticket():
     date = data.get('date')  # Changed from 'opening_datetime' to 'date'
     # requester_email = data.get('requester_email')  # Use 'requester_email' field
     request_source = data.get('request_source')
-    itil_category_id = data.get('itilcategories_id')  # Include 'itilcategories_id' field
+    # itil_category_id = data.get('itilcategories_id')  # Include 'itilcategories_id' field
 
     logging.debug(f'API raise_ticket received data: {data}')
 
     # Validate required fields
-    if not description or not status or not date  or not request_source or not itil_category_id:
+    if not description or not status or not date  or not request_source :
         return jsonify({"status": "error", "message": "Description, status, date, request_source, and itilcategories_id are required"}), 400
 
     # Map status and request source to internal IDs
@@ -282,7 +282,7 @@ def api_raise_ticket():
                 date += " 00:00:00"  # Append default time
 
             # Raise ticket
-            ticket_result = raise_ticket(description, session_token, status_id, date, request_source_id, itil_category_id)
+            ticket_result = raise_ticket(description, session_token, status_id, date, request_source_id)
             return jsonify(ticket_result)
         else:
             return jsonify(session_result)
