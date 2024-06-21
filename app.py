@@ -159,22 +159,27 @@ def check_user_exists(session_token, name):
         return {"status": "error", "message": str(e)}
 
 def parse_and_format_date(date_str):
-    try:
-        # Attempt to parse date in YYYY-MM-DD format
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-    except ValueError:
-        try:
-            # Attempt to parse date in DD-MM-YYYY format
-            date_obj = datetime.strptime(date_str, '%d-%m-%Y')
-        except ValueError:
-            try:
-                # Attempt to parse date in MM-DD-YYYY format
-                date_obj = datetime.strptime(date_str, '%m-%d-%Y')
-            except ValueError:
-                raise ValueError("Invalid date format. Use YYYY-MM-DD, DD-MM-YYYY, or MM-DD-YYYY.")
+    formats = [
+        '%Y-%m-%d %H:%M:%S',
+        '%d-%m-%Y %H:%M:%S',
+        '%m-%d-%Y %H:%M:%S',
+        '%Y-%m-%d',
+        '%d-%m-%Y',
+        '%m-%d-%Y'
+    ]
     
-    # Convert to standard format YYYY-MM-DD HH:MM:SS
-    return date_obj.strftime('%Y-%m-%d 00:00:00')
+    for fmt in formats:
+        try:
+            date_obj = datetime.strptime(date_str, fmt)
+            # If no time part is provided, add 00:00:00
+            if len(date_str.split()) == 1:
+                return date_obj.strftime('%Y-%m-%d 00:00:00')
+            else:
+                return date_obj.strftime('%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            continue
+    
+    raise ValueError("Invalid date format. Use YYYY-MM-DD, DD-MM-YYYY, or MM-DD-YYYY, with or without HH:MM:SS.")
 
 # Main function to add user and raise ticket
 def add_user_and_raise_ticket(data):
