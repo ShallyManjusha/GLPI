@@ -124,7 +124,7 @@ def raise_ticket(description, session_token, status, date, request_source, reque
         if response.status_code == 201:
             ticket_id = response.json()["id"]
             created_ticket_title = ticket_name  # Store the ticket title
-            return {"status": "success", "user_id":requester_id,"ticket_number": ticket_id, "ticket_title": ticket_name}
+            return {"status": "success", "user_id": requester_id, "ticket_number": ticket_id, "ticket_title": ticket_name}
         else:
             return {"status": "fail", "message": response.json(), "status_code": response.status_code}
     except requests.exceptions.RequestException as e:
@@ -137,7 +137,7 @@ def fetch_created_ticket_title():
         return {"ticket_title": created_ticket_title}
     else:
         return {"status": "fail", "message14": "No ticket title available"}
-    
+
 # Function to check if a user exists
 def check_user_exists(session_token, name):
     headers = {
@@ -147,7 +147,7 @@ def check_user_exists(session_token, name):
         'Session-Token': session_token
     }
     params = {
-        'searchText[name]': name
+        'searchText': name
     }
     try:
         response = requests.get(f'{GLPI_API_URL}/User', headers=headers, params=params)
@@ -156,7 +156,9 @@ def check_user_exists(session_token, name):
         if response.status_code == 200:
             users = response.json()
             if users:  # If any user is found
-                return {"status": "success", "user_id": users[0]["id"]}
+                user_id = users[0]["id"]
+                user_name = users[1]["name"]
+                return {"status": "success", "user_id": user_id, "user_name": user_name}
             else:
                 return {"status": "fail", "message": "User not found"}
         else:
