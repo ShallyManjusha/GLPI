@@ -69,6 +69,7 @@ def add_user(session_token, name, email, is_active="1"):
         'App-Token': GLPI_APP_TOKEN,
         'Session-Token': session_token
     }
+    print(name)
     user_data = {
         "input": {
             "name": name,
@@ -201,28 +202,31 @@ def add_user_and_raise_ticket(data):
 
     try:
         # Check GLPI connection
+   
         session_result = check_glpi_connection()
         if session_result['status'] == 'success':
             session_token = session_result['session_token']
-
+        
             # Parse and format date
             try:
                 formatted_date = parse_and_format_date(date)
             except ValueError as e:
                 return {"status": "error", "message": str(e)}
-            
+      
             # Check if user exists
             user_check_result = check_user_exists(session_token, user_name)
+            print(user_check_result['status'])
             if user_check_result['status'] == 'success':
                 requester_id = user_check_result['user_id']
             else:
+             
                 # Add user
                 user_result = add_user(session_token, user_name, user_email)
                 if user_result['status'] == 'success':
                     requester_id = user_result['user_id']
                 else:
                     return user_result
-            
+       
             # Raise ticket
             ticket_result = raise_ticket(description, session_token, status_id, formatted_date, request_source_id, requester_id)
             return ticket_result
@@ -243,12 +247,12 @@ def fetch_created_ticket_title():
         return {"status": "fail", "message": "No ticket title available"}
 
 # Flask Routes
-@app.route('/api/check_glpi_connection', methods=['GET'])
+@app.route('/check_glpi_connection', methods=['GET'])
 def api_check_glpi_connection():
     result = check_glpi_connection()
     return jsonify(result)
 
-@app.route('/api/add_user_and_raise_ticket', methods=['POST'])
+@app.route('/add_user_and_raise_ticket', methods=['POST'])
 def api_add_user_and_raise_ticket():
     data = request.json
     result = add_user_and_raise_ticket(data)
