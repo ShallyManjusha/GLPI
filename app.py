@@ -138,7 +138,33 @@ def fetch_created_ticket_title():
     else:
         return {"status": "fail", "message14": "No ticket title available"}
     
-    
+# Function to check if a user exists
+def check_user_exists(session_token, name):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'user_token {GLPI_API_TOKEN}',
+        'App-Token': GLPI_APP_TOKEN,
+        'Session-Token': session_token
+    }
+    params = {
+        'searchText[name]': name
+    }
+    try:
+        response = requests.get(f'{GLPI_API_URL}/User', headers=headers, params=params)
+        logging.debug(f'GLPI check user response: {response.json()}')
+        
+        if response.status_code == 200:
+            users = response.json()
+            if users:  # If any user is found
+                return {"status": "success", "user_id": users[0]["id"]}
+            else:
+                return {"status": "fail", "message": "User not found"}
+        else:
+            return {"status": "fail", "message": response.json(), "status_code": response.status_code}
+    except requests.exceptions.RequestException as e:
+        logging.error(f'Error checking user: {str(e)}')
+        return {"status": "error", "message": str(e)}
+
 def parse_and_format_date(date_str):
     try:
         # Attempt to parse date in YYYY-MM-DD format
@@ -148,11 +174,15 @@ def parse_and_format_date(date_str):
             # Attempt to parse date in DD-MM-YYYY format
             date_obj = datetime.strptime(date_str, '%d-%m-%Y')
         except ValueError:
-            raise ValueError("Invalid date format. Use YYYY-MM-DD or DD-MM-YYYY.")
+            try:
+                # Attempt to parse date in MM-DD-YYYY format
+                date_obj = datetime.strptime(date_str, '%m-%d-%Y')
+            except ValueError:
+                raise ValueError("Invalid date format. Use YYYY-MM-DD, DD-MM-YYYY, or MM-DD-YYYY.")
     
     # Convert to standard format YYYY-MM-DD HH:MM:SS
     return date_obj.strftime('%Y-%m-%d 00:00:00')
-    
+
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "Welcome to the GLPI API"}), 200
@@ -203,20 +233,21 @@ def add_user_and_raise_ticket():
             except ValueError as e:
                 return jsonify({"status": "error", "message": str(e)}), 400
             
-            # Add user
-            user_result = add_user(session_token, user_name, user_email)
-            if user_result['status'] == 'success':
-                requester_id = user_result['user_id']
-
-                # Default time to '00:00:00' if only date is provided
-                if len(date.split()) == 1:  # Check if date string contains only date part
-                    date += " 00:00:00"  # Append default time
-
-                # Raise ticket
-                ticket_result = raise_ticket(description, session_token, status_id,formatted_date, request_source_id, requester_id)
-                return jsonify(ticket_result)
+            # Check if user exists
+            user_check_result = check_user_exists(session_token, user_name)
+            if user_check_result['status'] == 'success':
+                requester_id = user_check_result['user_id']
             else:
-                return jsonify(user_result)
+                # Add user
+                user_result = add_user(session_token, user_name, user_email)
+                if user_result['status'] == 'success':
+                    requester_id = user_result['user_id']
+                else:
+                    return jsonify(user_result)
+            
+            # Raise ticket
+            ticket_result = raise_ticket(description, session_token, status_id, formatted_date, request_source_id, requester_id)
+            return jsonify(ticket_result)
         else:
             return jsonify(session_result)
     except ValueError as e:
