@@ -187,12 +187,12 @@ def add_user_and_raise_ticket(data):
     logging.debug(f'Function add_user_and_raise_ticket received data: {data}')
 
     # Validate required fields
-    if not user_name or not user_email or not description or not status or not date or not request_source:
+    if not all([user_name, user_email, description, status, date, request_source]):
         return {"status": "error", "message": "Name, email, description, status, date, and request_source are required"}
 
     # Map status and request source to internal IDs
-    status_id = STATUS_MAPPING.get(status, None)
-    request_source_id = REQUEST_SOURCE_MAPPING.get(request_source, None)
+    status_id = STATUS_MAPPING.get(status)
+    request_source_id = REQUEST_SOURCE_MAPPING.get(request_source)
 
     if status_id is None:
         return {"status": "error", "message": f"Invalid status: {status}"}
@@ -234,13 +234,13 @@ def add_user_and_raise_ticket(data):
     except Exception as e:
         logging.error(f'Exception: {str(e)}')
         return {"status": "error", "message": str(e)}
-    
+
 # Function to fetch created ticket title
 def fetch_created_ticket_title():
     if created_ticket_title:
         return {"ticket_title": created_ticket_title}
     else:
-        return {"status": "fail", "message14": "No ticket title available"}
+        return {"status": "fail", "message": "No ticket title available"}
 
 # Flask Routes
 @app.route('/api/check_glpi_connection', methods=['GET'])
@@ -261,8 +261,4 @@ def get_created_ticket_title():
 
 # Test the function directly if run as a script
 if __name__ == '__main__':
-    with app.test_request_context():
-        result = add_user_and_raise_ticket(test_data)
-        print(result)
-
     app.run(debug=True, host='0.0.0.0', port=5000)
