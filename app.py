@@ -215,7 +215,6 @@ def add_user_and_raise_ticket(data):
       
             # Check if user exists
             user_check_result = check_user_exists(session_token, user_name)
-            print(user_check_result['status'])
             if user_check_result['status'] == 'success':
                 requester_id = user_check_result['user_id']
             else:
@@ -247,6 +246,14 @@ def fetch_created_ticket_title():
         return {"status": "fail", "message": "No ticket title available"}
 
 # Flask Routes
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "Welcome to the GLPI API"}), 200
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
 @app.route('/check_glpi_connection', methods=['GET'])
 def api_check_glpi_connection():
     result = check_glpi_connection()
